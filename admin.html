@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Multi-Tienda Seguro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen py-10 px-4 pb-24">
+
+    <div class="max-w-xl mx-auto space-y-6">
+        
+        <!-- PASO 1: PANTALLA DE ACCESO (LOGIN POR TIENDA Y PIN) -->
+        <div id="seccion-login" class="bg-white rounded-2xl shadow-md p-6">
+            <div class="text-center mb-6">
+                <div class="bg-black text-white w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
+                    <i class="fa-solid fa-lock text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-gray-900">Acceso a tu Tienda</h1>
+                <p class="text-xs text-gray-500 mt-1">Ingresa el identificador de tu tienda y tu PIN de seguridad</p>
+            </div>
+
+            <form onsubmit="verificarAcceso(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Slug de la Tienda</label>
+                    <input type="text" id="login-slug" required placeholder="ej. burger-house" 
+                        class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black outline-none uppercase">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">PIN Secreto</label>
+                    <input type="password" id="login-pin" required placeholder="Ej. 1234" 
+                        class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black outline-none">
+                </div>
+                <button type="submit" class="w-full bg-black hover:bg-gray-800 text-white font-bold py-3 rounded-xl transition shadow-md text-sm">
+                    Ingresar al Panel
+                </button>
+            </form>
+            <p id="login-error" class="text-xs text-red-500 text-center mt-3 hidden">Slug o PIN incorrecto. Si es tienda nueva, registra tu PIN con tu primer producto.</p>
+        </div>
+
+        <!-- PASO 2: PANEL DE ADMINISTRACIÓN PRIVADO (Oculto hasta hacer login) -->
+        <div id="seccion-admin" class="hidden space-y-6">
+            
+            <!-- Barra superior con sesión activa -->
+            <div class="bg-black text-white rounded-2xl p-4 flex justify-between items-center shadow-md">
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Tienda Activa</p>
+                    <h2 id="lbl-nombre-tienda" class="font-bold text-base">Restaurante</h2>
+                </div>
+                <button onclick="cerrarSesion()" class="bg-gray-800 hover:bg-gray-700 text-xs px-3 py-1.5 rounded-lg transition font-semibold flex items-center">
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Salir
+                </button>
+            </div>
+
+            <!-- Formulario de Nuevo Producto -->
+            <div class="bg-white rounded-2xl shadow-md overflow-hidden p-6">
+                <h3 class="font-bold text-base text-gray-900 mb-4 pb-2 border-b">Agregar Nuevo Producto</h3>
+
+                <form id="form-producto" onsubmit="guardarProducto(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nombre del Producto</label>
+                        <input type="text" id="nombreProducto" required placeholder="Ej. Hamburguesa Especial" 
+                            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Precio ($)</label>
+                        <input type="number" step="0.01" id="precio" required placeholder="150.00" 
+                            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black outline-none">
+                    </div>
+
+                    <!-- Foto Base64 (Modificado: sin 'capture="environment"' para que solo busque en galería/archivos) -->
+                    <div class="bg-gray-50 p-4 rounded-xl border space-y-3">
+                        <label class="block text-xs font-bold text-gray-700 uppercase">Fotografía del Producto</label>
+                        <input type="file" id="input-foto" accept="image/*" onchange="procesarFoto(event)"
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800 cursor-pointer" required>
+
+                        <div id="preview-container" class="hidden mt-2 text-center">
+                            <img id="img-preview" class="w-28 h-28 object-cover rounded-xl border shadow-sm mx-auto">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-submit" class="w-full bg-black hover:bg-gray-800 text-white font-bold py-3 rounded-xl transition shadow-md">
+                        Guardar Producto en mi Tienda
+                    </button>
+                </form>
+                <div id="mensaje-exito" class="hidden mt-4 p-3 bg-green-50 text-green-700 rounded-xl text-xs font-medium text-center">
+                    ¡Producto agregado con éxito!
+                </div>
+            </div>
+
+            <!-- Inventario exclusivo de la tienda -->
+            <div class="bg-white rounded-2xl shadow-md overflow-hidden p-6">
+                <h3 class="font-bold text-base text-gray-900 mb-4 pb-2 border-b">Mis Productos Registrados</h3>
+                <div id="lista-inventario" class="space-y-3 max-h-96 overflow-y-auto pr-1">
+                    <p class="text-xs text-gray-400 text-center py-4">Cargando tus productos...</p>
+                </div>
+            </div>
+
+            <!-- Botón de Acceso Directo: Ver Tienda en Vivo -->
+            <div class="bg-white border rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-50 text-blue-600 p-2.5 rounded-xl">
+                        <i class="fa-solid fa-store text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold uppercase">Vista previa</p>
+                        <p class="text-xs font-semibold text-gray-800">Mira cómo ven los clientes tu menú</p>
+                    </div>
+                </div>
+                <a id="btn-ver-tienda" href="#" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center space-x-1.5 shadow-sm">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <span>Ver Tienda</span>
+                </a>
+            </div>
+
+            <!-- Sección de Enlace y Compartir -->
+            <div class="bg-green-50 border border-green-200 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+                <div>
+                    <p class="text-xs text-green-800 font-bold">Enlace de tu menú para clientes:</p>
+                    <p id="url-tienda-txt" class="text-[11px] text-green-600 truncate max-w-[200px] mt-0.5 font-mono"></p>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="compartirRedSocial('whatsapp')" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold p-2.5 rounded-xl transition shadow-sm" title="Compartir en WhatsApp">
+                        <i class="fa-brands fa-whatsapp text-sm"></i>
+                    </button>
+                    <button onclick="copiarEnlaceDirecto()" class="bg-gray-900 hover:bg-black text-white text-xs font-bold px-3 py-2.5 rounded-xl transition flex items-center space-x-1 shadow-sm">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>Copiar</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSFeAPHgIS0kW_sYP1C6Bqr1O5ecLLkd53W3XnXDKgO_UFhJsExA9VA1nf96X1iwTK/exec';
+        let imagenBase64Final = "";
+        let sesionActual = { slug: "", pin: "", nombreRestaurante: "", telefonoWhatsApp: "" };
+        let cacheProductosGlobal = [];
+
+        // Verificar acceso por PIN
+        async function verificarAcceso(event) {
+            event.preventDefault();
+            let slugInput = document.getElementById('login-slug').value.trim().toLowerCase();
+            let pinInput = document.getElementById('login-pin').value.trim();
+            let errorMsg = document.getElementById('login-error');
+
+            errorMsg.classList.add('hidden');
+
+            try {
+                let response = await fetch(APPS_SCRIPT_URL);
+                cacheProductosGlobal = await response.json();
+
+                let productosTienda = cacheProductosGlobal.filter(p => p.slug && p.slug.toLowerCase() === slugInput);
+
+                if (productosTienda.length > 0) {
+                    let pinRegistrado = String(productosTienda[0].pin || "");
+                    
+                    if (pinRegistrado && pinRegistrado !== pinInput) {
+                        errorMsg.classList.remove('hidden');
+                        return;
+                    }
+
+                    sesionActual = {
+                        slug: slugInput,
+                        pin: pinInput,
+                        nombreRestaurante: productosTienda[0].nombreRestaurante,
+                        telefonoWhatsApp: productosTienda[0].telefonoWhatsApp
+                    };
+                } else {
+                    let nombreRestauranteNuevo = prompt("Es una tienda nueva. Ingresa el Nombre de tu Restaurante:") || "Mi Tienda";
+                    let telefonoNuevo = prompt("Ingresa tu número de WhatsApp (con código de país, ej. 52155...):") || "520000000000";
+                    
+                    sesionActual = {
+                        slug: slugInput,
+                        pin: pinInput,
+                        nombreRestaurante: nombreRestauranteNuevo,
+                        telefonoWhatsApp: telefonoNuevo
+                    };
+                }
+
+                iniciarPanelAdmin();
+
+            } catch (error) {
+                console.error(error);
+                alert("Error al conectar con la base de datos.");
+            }
+        }
+
+        function iniciarPanelAdmin() {
+            document.getElementById('seccion-login').classList.add('hidden');
+            document.getElementById('seccion-admin').classList.remove('hidden');
+            document.getElementById('lbl-nombre-tienda').innerText = sesionActual.nombreRestaurante;
+
+            let pathName = window.location.pathname;
+            let basePath = pathName.substring(0, pathName.lastIndexOf('/') + 1);
+            let urlTienda = window.location.origin + basePath + `index.html?tienda=${sesionActual.slug}`;
+            
+            document.getElementById('url-tienda-txt').innerText = urlTienda;
+            document.getElementById('btn-ver-tienda').href = urlTienda;
+
+            cargarMisProductos();
+        }
+
+        function cerrarSesion() {
+            location.reload();
+        }
+
+        async function cargarMisProductos() {
+            try {
+                let response = await fetch(APPS_SCRIPT_URL);
+                cacheProductosGlobal = await response.json();
+
+                let misProductos = cacheProductosGlobal.filter(p => p.slug && p.slug.toLowerCase() === sesionActual.slug.toLowerCase());
+                renderizarMisProductos(misProductos);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function renderizarMisProductos(productos) {
+            const contenedor = document.getElementById('lista-inventario');
+            contenedor.innerHTML = '';
+
+            if (productos.length === 0) {
+                contenedor.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">Aún no tienes productos registrados.</p>';
+                return;
+            }
+
+            productos.forEach((prod) => {
+                contenedor.innerHTML += `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 border rounded-xl">
+                        <div class="flex items-center space-x-3">
+                            <img src="${prod.imagenUrl || 'https://via.placeholder.com/50'}" class="w-10 h-10 object-cover rounded-lg border">
+                            <div>
+                                <h4 class="font-bold text-xs text-gray-900">${prod.nombreProducto}</h4>
+                                <p class="text-xs text-gray-600">$${prod.precio}</p>
+                            </div>
+                        </div>
+                        <button onclick="borrarMiProducto(${prod.id})" class="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-lg text-xs transition" title="Eliminar">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function procesarFoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 400;
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    imagenBase64Final = canvas.toDataURL('image/jpeg', 0.6);
+
+                    document.getElementById('img-preview').src = imagenBase64Final;
+                    document.getElementById('preview-container').classList.remove('hidden');
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        async function guardarProducto(event) {
+            event.preventDefault();
+            if (!imagenBase64Final) {
+                alert("Por favor selecciona una imagen.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-submit');
+            btn.disabled = true;
+            btn.innerText = "Guardando...";
+
+            const datos = {
+                slug: sesionActual.slug,
+                pin: sesionActual.pin,
+                nombreRestaurante: sesionActual.nombreRestaurante,
+                telefonoWhatsApp: sesionActual.telefonoWhatsApp,
+                nombreProducto: document.getElementById('nombreProducto').value,
+                precio: document.getElementById('precio').value,
+                imagenUrl: imagenBase64Final
+            };
+
+            try {
+                await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                });
+
+                mostrarMensajeExito("¡Producto guardado con éxito!");
+                document.getElementById('nombreProducto').value = '';
+                document.getElementById('precio').value = '';
+                document.getElementById('preview-container').classList.add('hidden');
+                imagenBase64Final = "";
+                document.getElementById('input-foto').value = '';
+                
+                setTimeout(() => cargarMisProductos(), 1500);
+            } catch (error) {
+                alert("Error al guardar.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Guardar Producto en mi Tienda";
+            }
+        }
+
+        async function borrarMiProducto(id) {
+            if (!confirm("¿Estás seguro de eliminar este producto?")) return;
+
+            try {
+                await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: "delete", id: id })
+                });
+
+                mostrarMensajeExito("¡Producto eliminado!");
+                setTimeout(() => cargarMisProductos(), 1500);
+            } catch (error) {
+                alert("Error al eliminar.");
+            }
+        }
+
+        function mostrarMensajeExito(texto) {
+            let msg = document.getElementById('mensaje-exito');
+            msg.innerText = texto;
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 4000);
+        }
+        
+        async function copiarEnlaceDirecto() {
+            let url = document.getElementById('url-tienda-txt').innerText;
+            try {
+                await navigator.clipboard.writeText(url);
+                alert("¡Enlace copiado al portapapeles!");
+            } catch (err) {
+                prompt("Copia el enlace de tu tienda:", url);
+            }
+        }
+
+        function compartirRedSocial(red) {
+            let url = document.getElementById('url-tienda-txt').innerText;
+            let texto = `¡Hola! Haz tus pedidos en línea directamente en nuestro menú digital: ${url}`;
+            let urlCompartir = "";
+
+            if (red === 'whatsapp') {
+                urlCompartir = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
+            }
+
+            if (urlCompartir) {
+                window.open(urlCompartir, '_blank', 'width=600,height=400');
+            }
+        }
+    </script>
+</body>
+</html>
