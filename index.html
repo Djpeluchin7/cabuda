@@ -9,15 +9,14 @@
     <!-- FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gray-50 min-h-screen pb-28">
+<body class="bg-gray-50 min-h-screen pb-12">
 
-    <!-- Encabezado del Restaurante -->
+    <!-- Encabezado del Restaurante con el Carrito a la Derecha -->
     <header class="bg-white shadow-sm sticky top-0 z-30">
-        <div class="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <div class="bg-black text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-sm">
-                <i class="fa-solid fa-store text-lg"></i>
-                   
+                    <i class="fa-solid fa-store text-lg"></i>
                 </div>
                 <div>
                     <h1 id="nombre-restaurante" class="font-bold text-base text-gray-900">Cargando productos...</h1>
@@ -26,6 +25,12 @@
                     </p>
                 </div>
             </div>
+
+            <!-- Botón del Carrito en el Encabezado (Oculto si está vacío) -->
+            <button id="btn-carrito-header" onclick="abrirModalCarrito()" class="bg-black hover:bg-gray-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-2 hidden">
+                <i class="fa-solid fa-bag-shopping text-sm"></i>
+                <span>(<span id="cantidad-items-header">0</span>) <span id="total-carrito-header">$0.00</span></span>
+            </button>
         </div>
     </header>
 
@@ -45,48 +50,34 @@
         </div>
     </main>
 
-    <!-- Barra Inferior / Botón Flotante del Carrito -->
-    <div id="barra-carrito" class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 z-40 hidden">
-        <div class="max-w-md mx-auto flex items-center justify-between">
-            <div>
-                <p class="text-[10px] text-gray-500 uppercase font-bold">Total del Pedido</p>
-                <p id="total-carrito-barra" class="text-base font-extrabold text-gray-900">$0.00</p>
-            </div>
-            <button onclick="abrirModalCarrito()" class="bg-black hover:bg-gray-800 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-md transition flex items-center space-x-2">
-                <i class="fa-solid fa-bag-shopping text-sm"></i>
-                <span>Ver Carrito (<span id="cantidad-items-barra">0</span>)</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- Modal del Carrito de Compras (Sin Nombre ni Dirección) -->
-    <div id="modal-carrito" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl animate-slide-up">
+    <!-- Modal del Carrito de Compras (Centrado a la mitad de la pantalla) -->
+    <div id="modal-carrito" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl max-h-[50vh] flex flex-col shadow-2xl animate-fade-in">
             
             <!-- Cabecera del Modal -->
-            <div class="p-4 border-b flex justify-between items-center">
+            <div class="p-3 border-b flex justify-between items-center">
                 <h3 class="font-bold text-base text-gray-900 flex items-center gap-2">
                     <i class="fa-solid fa-bag-shopping text-black"></i> Tu Carrito
                 </h3>
-                <button onclick="cerrarModalCarrito()" class="text-gray-400 hover:text-gray-600 p-2 rounded-full">
+                <button onclick="cerrarModalCarrito()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-full">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
             <!-- Lista de Ítems en el Carrito con Cantidad -->
-            <div id="items-carrito" class="p-4 space-y-3 overflow-y-auto flex-1 max-h-[50vh]">
+            <div id="items-carrito" class="p-3 space-y-3 overflow-y-auto flex-1">
                 <!-- Se inyectan dinámicamente -->
             </div>
 
             <!-- Resumen y Botón de WhatsApp -->
-            <div class="p-4 border-t bg-gray-50 space-y-3">
+            <div class="p-3 border-t bg-gray-50 space-y-2.5 rounded-b-3xl">
                 <div class="flex justify-between items-center pt-1">
                     <span class="text-xs font-bold text-gray-600">Total a pagar:</span>
                     <span id="total-carrito-modal" class="text-base font-extrabold text-gray-900">$0.00</span>
                 </div>
 
-                <button onclick="enviarPedidoWhatsApp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-2xl transition shadow-md flex items-center justify-center space-x-2 text-sm">
-                    <i class="fa-brands fa-whatsapp text-lg"></i>
+                <button onclick="enviarPedidoWhatsApp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl transition shadow-md flex items-center justify-center space-x-2 text-xs">
+                    <i class="fa-brands fa-whatsapp text-base"></i>
                     <span>Enviar Pedido por WhatsApp</span>
                 </button>
             </div>
@@ -215,7 +206,7 @@
 
         function actualizarInterfazCarrito() {
             const contenedorItems = document.getElementById('items-carrito');
-            const barraCarrito = document.getElementById('barra-carrito');
+            const btnCarritoHeader = document.getElementById('btn-carrito-header');
             contenedorItems.innerHTML = '';
 
             let totalItemsCount = 0;
@@ -223,12 +214,12 @@
 
             if (carrito.length === 0) {
                 contenedorItems.innerHTML = '<p class="text-xs text-gray-400 text-center py-6">Tu carrito está vacío</p>';
-                barraCarrito.classList.add('hidden');
+                btnCarritoHeader.classList.add('hidden');
                 cerrarModalCarrito();
                 return;
             }
 
-            barraCarrito.classList.remove('hidden');
+            btnCarritoHeader.classList.remove('hidden');
 
             carrito.forEach((item, index) => {
                 totalItemsCount += item.cantidad;
@@ -236,9 +227,9 @@
                 subtotalGeneral += totalItem;
 
                 contenedorItems.innerHTML += `
-                    <div class="flex items-center justify-between py-2.5 border-b border-gray-100">
-                        <div class="flex items-center space-x-3">
-                            <img src="${item.imagenUrl || 'https://via.placeholder.com/50'}" class="w-11 h-11 object-cover rounded-xl border">
+                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                        <div class="flex items-center space-x-2.5">
+                            <img src="${item.imagenUrl || 'https://via.placeholder.com/50'}" class="w-10 h-10 object-cover rounded-xl border">
                             <div>
                                 <h4 class="font-bold text-xs text-gray-900">${item.nombreProducto}</h4>
                                 <p class="text-[11px] text-gray-500">$${item.precio.toFixed(2)} c/u</p>
@@ -248,11 +239,11 @@
                         <!-- Controles de Cantidad (+ y -) -->
                         <div class="flex items-center space-x-2">
                             <div class="flex items-center border rounded-xl bg-gray-50 overflow-hidden shadow-sm">
-                                <button onclick="cambiarCantidad(${index}, -1)" class="px-2.5 py-1 text-gray-600 hover:bg-gray-200 transition text-xs font-bold">
+                                <button onclick="cambiarCantidad(${index}, -1)" class="px-2 py-0.5 text-gray-600 hover:bg-gray-200 transition text-xs font-bold">
                                     -
                                 </button>
-                                <span class="px-2.5 text-xs font-bold text-gray-800">${item.cantidad}</span>
-                                <button onclick="cambiarCantidad(${index}, 1)" class="px-2.5 py-1 text-gray-600 hover:bg-gray-200 transition text-xs font-bold">
+                                <span class="px-2 text-xs font-bold text-gray-800">${item.cantidad}</span>
+                                <button onclick="cambiarCantidad(${index}, 1)" class="px-2 py-0.5 text-gray-600 hover:bg-gray-200 transition text-xs font-bold">
                                     +
                                 </button>
                             </div>
@@ -264,8 +255,8 @@
                 `;
             });
 
-            document.getElementById('cantidad-items-barra').innerText = totalItemsCount;
-            document.getElementById('total-carrito-barra').innerText = `$${subtotalGeneral.toFixed(2)}`;
+            document.getElementById('cantidad-items-header').innerText = totalItemsCount;
+            document.getElementById('total-carrito-header').innerText = `$${subtotalGeneral.toFixed(2)}`;
             document.getElementById('total-carrito-modal').innerText = `$${subtotalGeneral.toFixed(2)}`;
         }
 
